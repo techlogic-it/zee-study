@@ -11,6 +11,10 @@ DB_PATH = os.environ.get(
 
 
 def get_db():
+    # Ensure the directory exists (needed for Railway volume path e.g. /data)
+    db_dir = os.path.dirname(DB_PATH)
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
