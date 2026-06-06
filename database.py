@@ -36,6 +36,7 @@ def init_db():
             question_id   INTEGER PRIMARY KEY AUTOINCREMENT,
             subject       TEXT    NOT NULL,
             topic         TEXT,
+            topic_code    TEXT,
             difficulty    INTEGER NOT NULL,
             question_text TEXT    NOT NULL,
             option_a      TEXT    NOT NULL,
@@ -51,6 +52,7 @@ def init_db():
             attempt_id      INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id         INTEGER NOT NULL,
             subject         TEXT    NOT NULL,
+            topic_code      TEXT,
             difficulty      INTEGER NOT NULL,
             score           INTEGER NOT NULL,
             total_questions INTEGER NOT NULL,
@@ -71,6 +73,18 @@ def init_db():
         );
     ''')
     conn.commit()
+
+    # Migrations: add columns that may be missing from older DB schemas
+    for sql in [
+        'ALTER TABLE questions ADD COLUMN topic_code TEXT',
+        'ALTER TABLE quiz_attempts ADD COLUMN topic_code TEXT',
+    ]:
+        try:
+            c.execute(sql)
+            conn.commit()
+        except Exception:
+            pass  # Column already exists — safe to ignore
+
     conn.close()
 
 
