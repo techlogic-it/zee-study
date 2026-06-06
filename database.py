@@ -135,9 +135,11 @@ def create_user(username, password, email=None, first_name=None, last_name=None)
 
 
 def authenticate_user(username, password):
+    """Accept login via username OR email address."""
     conn = get_db()
     user = conn.execute(
-        'SELECT * FROM users WHERE username = ?', (username,)
+        'SELECT * FROM users WHERE username = ? OR LOWER(email) = LOWER(?)',
+        (username, username)
     ).fetchone()
     conn.close()
     if user and check_password_hash(user['password_hash'], password):
