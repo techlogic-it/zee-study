@@ -132,20 +132,34 @@ async function submitQuiz() {
 
   try {
     const resp = await fetch('/submit_quiz', {
-      method:  'POST',
-      headers: {'Content-Type': 'application/json'},
-      body:    JSON.stringify(payload)
+      method:      'POST',
+      credentials: 'same-origin',
+      headers:     {'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest'},
+      body:        JSON.stringify(payload)
     });
-    const data = await resp.json();
+
+    // Session expired — redirect to login
+    if (resp.status === 401 || resp.redirected) {
+      window.location.href = '/login';
+      return;
+    }
+
+    let data;
+    try {
+      data = await resp.json();
+    } catch(jsonErr) {
+      // Server returned non-JSON (e.g. an error page) — show status
+      throw new Error(`Server returned status ${resp.status}`);
+    }
+
     if (data.attempt_id) {
       window.location.href = `/results/${data.attempt_id}`;
     } else {
-      alert('Something went wrong. Please try again.');
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('submit-section').style.display = 'block';
+      throw new Error(data.error || 'Unexpected response from server.');
     }
   } catch(e) {
-    alert('Network error. Please try again.');
+    console.error('Quiz submit error:', e);
+    alert('Could not submit quiz: ' + e.message + '\n\nPlease check your connection and try again.');
     document.getElementById('loading').style.display = 'none';
     document.getElementById('submit-section').style.display = 'block';
   }
