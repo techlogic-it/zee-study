@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Profile – ZEE STUDY{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1 class="page-heading">👤 {{ user.username }}'s Profile</h1>
+  <p class="page-sub">Your full revision history and stats.</p>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-tile">
+      <div class="stat-val">{{ user.xp }}</div>
+      <div class="stat-lbl">⭐ Total XP</div>
+    </div>
+    <div class="stat-tile streak-tile">
+      <div class="stat-val">{{ user.current_streak }}</div>
+      <div class="stat-lbl">🔥 Current Streak</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-val">{{ user.highest_streak }}</div>
+      <div class="stat-lbl">🏆 Best Streak</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-val">{{ user.total_quizzes }}</div>
+      <div class="stat-lbl">📝 Total Quizzes</div>
+    </div>
+  </div>
+
+  <!-- Next streak milestone -->
+  {% if user.current_streak > 0 %}
+  {% set next_milestone = ((user.current_streak // 10) + 1) * 10 %}
+  {% set days_left = next_milestone - user.current_streak %}
+  <div class="streak-banner" style="margin-bottom:1.5rem">
+    🔥 Only <strong>{{ days_left }} more day{% if days_left != 1 %}s{% endif %}</strong>
+    until your next streak milestone ({{ next_milestone }} days) — earn +100 XP!
+  </div>
+  {% endif %}
+
+  <!-- Full history -->
+  <div class="card">
+    <div class="card-title">📊 Quiz History</div>
+    {% if history %}
+    <table>
+      <thead>
+        <tr>
+          <th>Subject</th>
+          <th>Difficulty</th>
+          <th>Score</th>
+          <th>%</th>
+          <th>XP earned</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in history %}
+        <tr>
+          <td><span class="pill pill-{{ a.subject[:4]|lower }}">{{ a.subject }}</span></td>
+          <td><span class="pill pill-d{{ a.difficulty }}">{{ difficulty_names[a.difficulty] }}</span></td>
+          <td>{{ a.score }}/{{ a.total_questions }}</td>
+          <td>
+            <strong style="color:{% if a.percentage >= 70 %}#2e7d32{% elif a.percentage >= 50 %}#e65100{% else %}#c62828{% endif %}">
+              {{ a.percentage }}%
+            </strong>
+          </td>
+          <td>+{{ a.xp_earned }}</td>
+          <td style="color:#546e7a;font-size:.85rem">{{ a.completed_at[:10] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p style="color:#546e7a;text-align:center;padding:1.5rem 0">
+      No quizzes completed yet. <a href="{{ url_for('topics') }}" style="color:#2e7d32;font-weight:600">Start your first quiz!</a>
+    </p>
+    {% endif %}
+  </div>
+
+  <a href="{{ url_for('dashboard') }}" class="btn btn-outline">← Back to Dashboard</a>
+</div>
+{% endblock %}

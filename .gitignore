@@ -1,0 +1,34 @@
+# Database (persisted on Railway volume - do not commit)
+quiz.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment variables
+.env
+.env.local
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Migration / one-off scripts (keep locally, not needed on Railway)
+migrate_topics.py
+remap_topics.py

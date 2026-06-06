@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}{{ subject }} Quiz – ZEE STUDY{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:700px">
+
+  <div class="quiz-header">
+    <div>
+      <span class="pill pill-{{ subject[:4]|lower }}">{{ subject }}</span>
+      <span class="pill" style="margin-left:.4rem;background:#e8f5e9;color:#2e7d32;font-weight:600">{{ topic_code }} – {{ topic_name }}</span>
+      <span class="pill pill-d{{ level }}" style="margin-left:.4rem">{{ difficulty_name }}</span>
+    </div>
+    <span class="question-counter" id="q-counter">Question 1 of {{ questions|length }}</span>
+  </div>
+
+  <div class="quiz-progress-bar">
+    <div class="quiz-progress-fill" id="progress-fill" style="width:0%"></div>
+  </div>
+
+  <form id="quiz-form">
+    {% for q in questions %}
+    {% set q_idx = loop.index0 %}
+    <div class="card question-card {% if loop.first %}active{% endif %}" id="qcard-{{ q_idx }}">
+      <div class="question-text">{{ loop.index }}. {{ q.question_text }}</div>
+      <div class="options">
+        {% for letter, text in [('A', q.option_a), ('B', q.option_b), ('C', q.option_c), ('D', q.option_d)] %}
+        <button type="button"
+                class="option-btn"
+                onclick="selectOption({{ q_idx }}, '{{ letter }}', this)"
+                id="opt-{{ q_idx }}-{{ letter }}">
+          <span class="opt-letter">{{ letter }}</span>
+          <span>{{ text }}</span>
+        </button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </form>
+
+  <div class="quiz-nav">
+    <button class="btn btn-outline btn-sm" id="btn-prev" onclick="prevQuestion()" disabled>← Previous</button>
+    <span id="answered-count" style="color:#546e7a;font-size:.85rem">0 of {{ questions|length }} answered</span>
+    <button class="btn btn-green btn-sm" id="btn-next" onclick="nextQuestion()">Next →</button>
+  </div>
+
+  <!-- Submit button (hidden until last question) -->
+  <div id="submit-section" style="display:none;margin-top:1.5rem;text-align:center">
+    <p style="color:#546e7a;margin-bottom:1rem;font-size:.95rem">
+      You have answered <strong id="final-answered">0</strong> of {{ questions|length }} questions.
+    </p>
+    <button class="btn btn-green btn-lg" onclick="submitQuiz()">Submit Quiz ✓</button>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading" style="display:none;text-align:center;padding:2rem">
+    <p style="color:#546e7a;font-size:1.1rem">Marking your answers…</p>
+  </div>
+
+</div>
+
+<script>
+const QUESTIONS   = {{ questions_json | safe }};
+const SUBJECT     = {{ subject | tojson }};
+const LEVEL       = {{ level }};
+const TOPIC_CODE  = {{ topic_code | tojson }};
+const TOTAL     = QUESTIONS.length;
+
+let currentIndex = 0;
+let answers = {};   // { question_id: 'A'/'B'/'C'/'D' }
+
+function selectOption(qIndex, letter, btn) {
+  // Deselect all options for this question
+  ['A','B','C','D'].forEach(l => {
+    const el = document.getElementById(`opt-${qIndex}-${l}`);
+    if (el) el.classList.remove('selected');
+  });
+  btn.classList.add('selected');
+  const qid = QUESTIONS[qIndex].question_id;
+  answers[qid] = letter;
+  updateUI();
+}
+
+function updateUI() {
+  const answered = Object.keys(answers).length;
+  document.getElementById('answered-count').textContent =
+    `${answered} of ${TOTAL} answered`;
+  document.getElementById('final-answered').textContent = answered;
+  const pct = ((currentIndex) / TOTAL) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('q-counter').textContent =
+    `Question ${currentIndex + 1} of ${TOTAL}`;
+  document.getElementById('btn-prev').disabled = currentIndex === 0;
+
+  if (currentIndex === TOTAL - 1) {
+    document.getElementById('btn-next').style.display = 'none';
+    document.getElementById('submit-section').style.display = 'block';
+  } else {
+    document.getElementById('btn-next').style.display = 'inline-block';
+    document.getElementById('submit-section').style.display = 'none';
+  }
+}
+
+function showQuestion(index) {
+  document.querySelectorAll('.question-card').forEach(c => c.classList.remove('active'));
+  document.getElementById(`qcard-${index}`).classList.add('active');
+  currentIndex = index;
+  updateUI();
+}
+
+function nextQuestion() {
+  if (currentIndex < TOTAL - 1) showQuestion(currentIndex + 1);
+}
+
+function prevQuestion() {
+  if (currentIndex > 0) showQuestion(currentIndex - 1);
+}
+
+async function submitQuiz() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('submit-section').style.display = 'none';
+
+  // Build answers keyed by question_id as strings
+  const payload = {
+    subject:    SUBJECT,
+    level:      LEVEL,
+    topic_code: TOPIC_CODE,
+    answers:    {}
+  };
+  QUESTIONS.forEach(q => {
+    payload.answers[String(q.question_id)] = answers[q.question_id] || '';
+  });
+
+  try {
+    const resp = await fetch('/submit_quiz', {
+      method:  'POST',
+      headers: {'Content-Type': 'application/json'},
+      body:    JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.attempt_id) {
+      window.location.href = `/results/${data.attempt_id}`;
+    } else {
+      alert('Something went wrong. Please try again.');
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('submit-section').style.display = 'block';
+    }
+  } catch(e) {
+    alert('Network error. Please try again.');
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('submit-section').style.display = 'block';
+  }
+}
+
+updateUI();
+</script>
+{% endblock %}

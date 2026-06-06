@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Choose Subject – ZEE STUDY{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h1 class="page-heading">📚 Choose a Subject</h1>
+  <p class="page-sub">Select the science subject you want to revise today.</p>
+
+  <div class="subject-grid">
+    <a href="{{ url_for('topic', subject='Biology') }}" class="subject-card bio-card">
+      <span class="icon">🧬</span>
+      Biology
+      <span style="font-size:.8rem;font-weight:400;opacity:.9">Cells, genetics, ecology & more</span>
+    </a>
+    <a href="{{ url_for('topic', subject='Chemistry') }}" class="subject-card chem-card">
+      <span class="icon">⚗️</span>
+      Chemistry
+      <span style="font-size:.8rem;font-weight:400;opacity:.9">Atoms, bonding, reactions & more</span>
+    </a>
+    <a href="{{ url_for('topic', subject='Physics') }}" class="subject-card phys-card">
+      <span class="icon">⚡</span>
+      Physics
+      <span style="font-size:.8rem;font-weight:400;opacity:.9">Forces, energy, waves & more</span>
+    </a>
+  </div>
+</div>
+{% endblock %}

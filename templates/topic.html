@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ subject }} Topics – ZEE STUDY{% endblock %}
+
+{% block content %}
+<div class="container">
+  <a href="{{ url_for('topics') }}" style="color:#546e7a;font-size:.9rem;text-decoration:none">← Back to subjects</a>
+  <h1 class="page-heading" style="margin-top:.7rem">
+    {% if subject == 'Biology' %}🧬{% elif subject == 'Chemistry' %}⚗️{% else %}⚡{% endif %}
+    {{ subject }}
+  </h1>
+  <p class="page-sub">Choose a topic to revise.</p>
+
+  <div class="topic-grid">
+    {% for code, name in topics %}
+    {% set total = topic_totals.get(code, 0) %}
+    <a href="{{ url_for('difficulty', subject=subject, topic_code=code) }}"
+       class="topic-card {% if total == 0 %}topic-empty{% endif %}">
+      <div class="topic-code">{{ code }}</div>
+      <div class="topic-name">{{ name }}</div>
+      <div class="topic-count">
+        {% if total > 0 %}
+          {{ total }} question{% if total != 1 %}s{% endif %}
+        {% else %}
+          Coming soon
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

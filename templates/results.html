@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Results – ZEE STUDY{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:700px">
+
+  <h1 class="page-heading">📋 Quiz Results</h1>
+  <p class="page-sub">
+    <span class="pill pill-{{ attempt.subject[:4]|lower }}">{{ attempt.subject }}</span>
+    <span class="pill pill-d{{ attempt.difficulty }}" style="margin-left:.4rem">
+      {{ difficulty_names[attempt.difficulty] }}
+    </span>
+  </p>
+
+  <!-- Score circle -->
+  <div class="card" style="text-align:center">
+    {% set pct = attempt.percentage %}
+    <div class="score-circle {% if pct >= 70 %}score-good{% elif pct >= 50 %}score-ok{% else %}score-low{% endif %}">
+      <div class="score-pct">{{ pct }}%</div>
+      <div class="score-raw">{{ attempt.score }}/{{ attempt.total_questions }}</div>
+    </div>
+    <p style="color:#546e7a;font-size:.95rem">
+      {% if pct == 100 %}
+        🌟 Perfect score! Outstanding work!
+      {% elif pct >= 70 %}
+        ✅ Great job — you passed this stage!
+      {% elif pct >= 50 %}
+        👍 Good effort — keep practising!
+      {% else %}
+        💪 Keep going — revision takes practice!
+      {% endif %}
+    </p>
+  </div>
+
+  <!-- XP & streak -->
+  <div class="xp-banner">
+    ⭐ XP earned this quiz: <strong>+{{ attempt.xp_earned }} XP</strong>
+    &nbsp;|&nbsp; Total XP: <strong>{{ user.xp }}</strong>
+  </div>
+
+  <div class="streak-banner">
+    🔥 Current streak: <strong>{{ user.current_streak }} day{% if user.current_streak != 1 %}s{% endif %}</strong>
+    &nbsp;|&nbsp; Best streak: <strong>{{ user.highest_streak }} day{% if user.highest_streak != 1 %}s{% endif %}</strong>
+    {% if user.current_streak % 10 == 0 and user.current_streak > 0 %}
+      &nbsp;🎉 <strong>Streak milestone bonus! +100 XP</strong>
+    {% endif %}
+  </div>
+
+  <!-- Wrong answers -->
+  {% if attempt.wrong_answers %}
+  <div class="card">
+    <div class="card-title">❌ Questions to Review ({{ attempt.wrong_answers|length }})</div>
+    {% for w in attempt.wrong_answers %}
+    <div class="wrong-item">
+      <div class="wq-text">{{ loop.index }}. {{ w.question_text }}</div>
+      <div class="answer-row">
+        <span class="badge badge-wrong">
+          Your answer: {{ w.user_answer or '?' }} — {{ w.user_answer_text if w.user_answer_text != '(no answer given)' else 'Not answered' }}
+        </span>
+        <span class="badge badge-correct">
+          Correct: {{ w.correct_answer }} — {{ w.correct_answer_text }}
+        </span>
+      </div>
+      <div class="explanation-box">
+        <p><strong>Why it was wrong:</strong> {{ w.explanation }}</p>
+        <p style="margin-top:.5rem"><strong>How to correct it:</strong> {{ w.correction_tip }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card" style="text-align:center;padding:2rem">
+    <div style="font-size:2.5rem;margin-bottom:.5rem">🎉</div>
+    <p style="font-weight:700;font-size:1.1rem">All answers correct!</p>
+    <p style="color:#546e7a">Brilliant work — you got a perfect score.</p>
+  </div>
+  {% endif %}
+
+  <!-- Actions -->
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:.5rem">
+    {% if attempt.topic_code %}
+    <a href="{{ url_for('quiz', subject=attempt.subject, topic_code=attempt.topic_code, level=attempt.difficulty) }}"
+       class="btn btn-green">Try Again</a>
+    <a href="{{ url_for('difficulty', subject=attempt.subject, topic_code=attempt.topic_code) }}"
+       class="btn btn-outline">Change Difficulty</a>
+    {% else %}
+    <a href="{{ url_for('topic', subject=attempt.subject) }}"
+       class="btn btn-green">Try Again</a>
+    {% endif %}
+    <a href="{{ url_for('topics') }}" class="btn btn-outline">New Subject</a>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-outline">Dashboard</a>
+  </div>
+
+</div>
+{% endblock %}

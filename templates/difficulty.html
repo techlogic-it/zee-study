@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ topic_code }} {{ topic_name }} – ZEE STUDY{% endblock %}
+
+{% block content %}
+<div class="container">
+  <a href="{{ url_for('topic', subject=subject) }}" style="color:#546e7a;font-size:.9rem;text-decoration:none">← Back to {{ subject }} topics</a>
+  <h1 class="page-heading" style="margin-top:.7rem">
+    {% if subject == 'Biology' %}🧬{% elif subject == 'Chemistry' %}⚗️{% else %}⚡{% endif %}
+    {{ topic_code }} – {{ topic_name }}
+  </h1>
+  <p class="page-sub">Choose a difficulty stage. Work your way up from Easy to Exam Challenge!</p>
+
+  <div class="diff-grid">
+    {% for lvl, lname in [(1,'Easy'),(2,'Medium'),(3,'Hard'),(4,'Exam Challenge')] %}
+    {% set qcount = topic_counts.get(lvl, 0) %}
+    {% if qcount > 0 %}
+    <a href="{{ url_for('quiz', subject=subject, topic_code=topic_code, level=lvl) }}"
+       class="diff-card d{{ lvl }}">
+      <div style="font-size:1.8rem;margin-bottom:.5rem">
+        {% if lvl==1 %}🟢{% elif lvl==2 %}🔵{% elif lvl==3 %}🟠{% else %}🔴{% endif %}
+      </div>
+      <div class="diff-name">Stage {{ lvl }} – {{ lname }}</div>
+      <div class="diff-desc">
+        {% if lvl==1 %}Key facts and definitions. Build your confidence here.
+        {% elif lvl==2 %}Understand and apply your knowledge to simple situations.
+        {% elif lvl==3 %}Longer explanations, calculations, and linked ideas.
+        {% else %}GCSE exam-style questions with detailed feedback.
+        {% endif %}
+      </div>
+      <div style="margin-top:.5rem;font-size:.8rem;opacity:.85">{{ qcount }} question{% if qcount != 1 %}s{% endif %} available</div>
+    </a>
+    {% else %}
+    <div class="diff-card d{{ lvl }}" style="opacity:.4;cursor:not-allowed">
+      <div style="font-size:1.8rem;margin-bottom:.5rem">
+        {% if lvl==1 %}🟢{% elif lvl==2 %}🔵{% elif lvl==3 %}🟠{% else %}🔴{% endif %}
+      </div>
+      <div class="diff-name">Stage {{ lvl }} – {{ lname }}</div>
+      <div class="diff-desc">No questions yet for this topic & difficulty.</div>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
