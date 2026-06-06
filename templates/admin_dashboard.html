@@ -55,53 +55,48 @@
         <thead>
           <tr style="background:#f1f8f1;text-align:left">
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Name</th>
-            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Username</th>
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Email</th>
-            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Plan</th>
-            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Expires</th>
-            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">XP</th>
-            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">🔥 Streak</th>
-            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Quizzes</th>
-            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Last Active</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Username</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600;text-align:center">XP</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600;text-align:center">🔥 Streak</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600;text-align:center">Quizzes</th>
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Joined</th>
-            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Actions</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Subscription</th>
           </tr>
         </thead>
         <tbody>
           {% for u in users %}
           <tr style="border-top:1px solid #f0f0f0">
-            <td style="padding:.75rem 1rem;color:#1b5e20">{{ (u.first_name or '') ~ ' ' ~ (u.last_name or '') | trim or '—' }}</td>
-            <td style="padding:.75rem 1rem;font-weight:600;color:#1b5e20">{{ u.username }}</td>
-            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.email or '—' }}</td>
-            <td style="padding:.75rem 1rem">
-              {% if u.subscription_plan == 'premium' %}
-                <span style="background:#fef3c7;color:#92400e;padding:.2rem .6rem;border-radius:20px;font-size:.8rem;font-weight:600">⭐ Premium</span>
-              {% else %}
-                <span style="background:#f3f4f6;color:#6b7280;padding:.2rem .6rem;border-radius:20px;font-size:.8rem">Free</span>
-              {% endif %}
+            <td style="padding:.75rem 1rem;white-space:nowrap">
+              <div style="font-weight:600;color:#1b5e20">{{ ((u.first_name or '') ~ ' ' ~ (u.last_name or '')) | trim or '—' }}</div>
+              <div style="font-size:.78rem;color:#546e7a">Last active: {{ u.last_active_date or 'never' }}</div>
             </td>
-            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.subscription_expires or '—' }}</td>
-            <td style="padding:.75rem 1rem">{{ u.xp }}</td>
-            <td style="padding:.75rem 1rem">{{ u.current_streak }}</td>
-            <td style="padding:.75rem 1rem">{{ u.total_quizzes }}</td>
-            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.last_active_date or '—' }}</td>
-            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.email or '—' }}</td>
+            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.username }}</td>
+            <td style="padding:.75rem 1rem;text-align:center">{{ u.xp }}</td>
+            <td style="padding:.75rem 1rem;text-align:center">{{ u.current_streak }}</td>
+            <td style="padding:.75rem 1rem;text-align:center">{{ u.total_quizzes }}</td>
+            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem;white-space:nowrap">{{ u.created_at[:10] if u.created_at else '—' }}</td>
             <td style="padding:.75rem 1rem">
-              <form method="POST" action="{{ url_for('admin_update_subscription', user_id=u.user_id) }}"
-                    style="display:flex;gap:.4rem;align-items:center">
-                <select name="plan" style="padding:.3rem .5rem;border:1px solid #ddd;border-radius:6px;font-size:.8rem">
-                  <option value="free" {% if u.subscription_plan == 'free' %}selected{% endif %}>Free</option>
-                  <option value="premium" {% if u.subscription_plan == 'premium' %}selected{% endif %}>Premium</option>
-                </select>
-                <input type="date" name="expires" value="{{ u.subscription_expires or '' }}"
-                       style="padding:.3rem .5rem;border:1px solid #ddd;border-radius:6px;font-size:.8rem">
-                <button type="submit" class="btn btn-green btn-sm" style="padding:.3rem .8rem;font-size:.8rem">Save</button>
+              <form method="POST" action="{{ url_for('admin_update_subscription', user_id=u.user_id) }}">
+                <div style="display:flex;flex-direction:column;gap:.4rem">
+                  <select name="plan" style="padding:.3rem .5rem;border:1px solid #ddd;border-radius:6px;font-size:.8rem">
+                    <option value="free" {% if u.subscription_plan == 'free' %}selected{% endif %}>Free</option>
+                    <option value="premium" {% if u.subscription_plan == 'premium' %}selected{% endif %}>⭐ Premium</option>
+                  </select>
+                  <div style="display:flex;gap:.4rem;align-items:center">
+                    <label style="font-size:.75rem;color:#546e7a;white-space:nowrap">Expires:</label>
+                    <input type="date" name="expires" value="{{ u.subscription_expires or '' }}"
+                           style="flex:1;padding:.3rem .5rem;border:1px solid #ddd;border-radius:6px;font-size:.8rem">
+                  </div>
+                  <button type="submit" class="btn btn-green btn-sm" style="padding:.3rem .8rem;font-size:.8rem">Save</button>
+                </div>
               </form>
             </td>
           </tr>
           {% else %}
           <tr>
-            <td colspan="10" style="padding:2rem;text-align:center;color:#546e7a">No users registered yet.</td>
+            <td colspan="8" style="padding:2rem;text-align:center;color:#546e7a">No users registered yet.</td>
           </tr>
           {% endfor %}
         </tbody>
