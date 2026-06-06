@@ -29,6 +29,22 @@
     </div>
   </div>
 
+  <!-- Email actions -->
+  <div class="card" style="margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+    <div>
+      <div class="card-title" style="margin-bottom:.25rem">📧 Email Actions</div>
+      <p style="margin:0;color:#546e7a;font-size:.9rem">Send reminders to users who haven't been active recently.</p>
+    </div>
+    <form method="POST" action="{{ url_for('admin_send_reminders') }}" style="display:flex;gap:.5rem;align-items:center">
+      <select name="days" style="padding:.5rem;border:1px solid #ddd;border-radius:6px;font-size:.9rem">
+        <option value="7">Inactive 7+ days</option>
+        <option value="3">Inactive 3+ days</option>
+        <option value="14">Inactive 14+ days</option>
+      </select>
+      <button type="submit" class="btn btn-green btn-sm">Send Reminders</button>
+    </form>
+  </div>
+
   <!-- Users table -->
   <div class="card" style="padding:0;overflow:hidden">
     <div style="padding:1.2rem 1.5rem;border-bottom:1px solid #e8f5e9">
@@ -39,6 +55,7 @@
         <thead>
           <tr style="background:#f1f8f1;text-align:left">
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Username</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Email</th>
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Plan</th>
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Expires</th>
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">XP</th>
@@ -53,6 +70,7 @@
           {% for u in users %}
           <tr style="border-top:1px solid #f0f0f0">
             <td style="padding:.75rem 1rem;font-weight:600;color:#1b5e20">{{ u.username }}</td>
+            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.email or '—' }}</td>
             <td style="padding:.75rem 1rem">
               {% if u.subscription_plan == 'premium' %}
                 <span style="background:#fef3c7;color:#92400e;padding:.2rem .6rem;border-radius:20px;font-size:.8rem;font-weight:600">⭐ Premium</span>
@@ -81,7 +99,7 @@
           </tr>
           {% else %}
           <tr>
-            <td colspan="9" style="padding:2rem;text-align:center;color:#546e7a">No users registered yet.</td>
+            <td colspan="10" style="padding:2rem;text-align:center;color:#546e7a">No users registered yet.</td>
           </tr>
           {% endfor %}
         </tbody>

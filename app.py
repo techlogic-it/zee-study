@@ -1,10 +1,12 @@
 import json
 import os
+import re
 import random
 from functools import wraps
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash, jsonify)
 import database as db
+import mailer
 
 app = Flask(__name__)
 app.secret_key = 'gcse-quiz-secret-key-change-in-production'
@@ -82,6 +84,7 @@ def index():
 def register():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
+        email    = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
         confirm  = request.form.get('confirm_password', '')
         if not username or not password:
@@ -90,10 +93,16 @@ def register():
             flash('Passwords do not match.', 'error')
         elif len(password) < 6:
             flash('Password must be at least 6 characters.', 'error')
+        elif not email or not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+            flash('Please enter a valid email address.', 'error')
         else:
-            ok, msg = db.create_user(username, password)
+            ok, msg = db.create_user(username, password, email)
             if ok:
                 flash('Account created! Please log in.', 'success')
+                try:
+                    mailer.send_welcome(email, username)
+                except Exception:
+                    pass
                 return redirect(url_for('login'))
             flash(msg, 'error')
     return render_template('register.html')
@@ -340,6 +349,19 @@ def admin_update_subscription(user_id):
     expires = request.form.get('expires') or None
     db.update_user_subscription(user_id, plan, expires)
     flash(f'Subscription updated.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/send-reminders', methods=['POST'])
+@admin_required
+def admin_send_reminders():
+    days = int(request.form.get('days', 7))
+    users = db.get_users_for_reminder(days_inactive=days)
+    sent = 0
+    for u in users:
+        if u.get('email'):
+            mailer.send_reminder(u['email'], u['username'], days)
+            sent += 1
+    flash(f'Reminder emails sent to {sent} user(s) inactive for {days}+ days.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 

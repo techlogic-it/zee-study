@@ -28,6 +28,7 @@ def init_db():
             user_id       INTEGER PRIMARY KEY AUTOINCREMENT,
             username      TEXT    UNIQUE NOT NULL,
             password_hash TEXT    NOT NULL,
+            email         TEXT    UNIQUE,
             xp            INTEGER DEFAULT 0,
             current_streak  INTEGER DEFAULT 0,
             highest_streak  INTEGER DEFAULT 0,
@@ -101,16 +102,25 @@ def init_db():
         except Exception:
             pass
 
+    for sql in [
+        'ALTER TABLE users ADD COLUMN email TEXT',
+    ]:
+        try:
+            c.execute(sql)
+            conn.commit()
+        except Exception:
+            pass
+
     conn.close()
 
 
-def create_user(username, password):
+def create_user(username, password, email=None):
     conn = get_db()
     try:
         password_hash = generate_password_hash(password, method='pbkdf2:sha256')
         conn.execute(
-            'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-            (username, password_hash)
+            'INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)',
+            (username, password_hash, email)
         )
         conn.commit()
         return True, 'Account created.'
@@ -312,7 +322,7 @@ def get_all_users():
     conn = get_db()
     c = conn.cursor()
     c.execute('''
-        SELECT u.user_id, u.username, u.xp, u.current_streak, u.highest_streak,
+        SELECT u.user_id, u.username, u.email, u.xp, u.current_streak, u.highest_streak,
                u.total_quizzes, u.subscription_plan, u.subscription_expires,
                u.created_at, u.last_active_date,
                COUNT(qa.attempt_id) as quiz_count
@@ -348,3 +358,22 @@ def update_user_subscription(user_id, plan, expires=None):
     )
     conn.commit()
     conn.close()
+
+
+def get_users_for_reminder(days_inactive=7):
+    """Return users with email who haven't been active for N days."""
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        SELECT user_id, username, email, last_active_date
+        FROM users
+        WHERE email IS NOT NULL
+          AND email != ''
+          AND (
+            last_active_date IS NULL
+            OR DATE(last_active_date) <= DATE('now', ?)
+          )
+    ''', (f'-{days_inactive} days',))
+    rows = c.fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
