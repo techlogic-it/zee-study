@@ -9,7 +9,12 @@ import database as db
 import mailer
 
 app = Flask(__name__)
-app.secret_key = 'gcse-quiz-secret-key-change-in-production'
+app.secret_key = os.environ.get('SECRET_KEY', 'gcse-quiz-secret-key-change-in-production')
+app.config.update(
+    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=os.environ.get('RAILWAY_ENVIRONMENT') is not None,
+)
 
 DIFFICULTY_NAMES = {1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Exam Challenge'}
 SUBJECTS = ['Biology', 'Chemistry', 'Physics']
