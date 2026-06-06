@@ -138,7 +138,7 @@ def authenticate_user(username, password):
     """Accept login via username OR email address."""
     conn = get_db()
     user = conn.execute(
-        'SELECT * FROM users WHERE username = ? OR LOWER(email) = LOWER(?)',
+        'SELECT * FROM users WHERE LOWER(username) = LOWER(?) OR LOWER(email) = LOWER(?)',
         (username, username)
     ).fetchone()
     conn.close()
