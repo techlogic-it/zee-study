@@ -5,15 +5,17 @@ import random
 from functools import wraps
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash, jsonify)
+from werkzeug.middleware.proxy_fix import ProxyFix
 import database as db
 import mailer
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.secret_key = os.environ.get('SECRET_KEY', 'gcse-quiz-secret-key-change-in-production')
 app.config.update(
     SESSION_COOKIE_SAMESITE='Lax',
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=os.environ.get('RAILWAY_ENVIRONMENT') is not None,
+    SESSION_COOKIE_SECURE=False,   # Railway terminates TLS at proxy; let browser handle it
 )
 
 DIFFICULTY_NAMES = {1: 'Easy', 2: 'Medium', 3: 'Hard', 4: 'Exam Challenge'}
@@ -327,13 +329,14 @@ def profile():
 # ── Admin routes ──────────────────────────────────────────
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'changeme123')
+print(f'[admin] Username="{ADMIN_USERNAME}" Password set={"YES (from env)" if os.environ.get("ADMIN_PASSWORD") else "NO (using default: changeme123)"}', flush=True)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        username = request.form.get('username', '')
-        password = request.form.get('password', '')
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+        if username.lower() == ADMIN_USERNAME.lower() and password == ADMIN_PASSWORD:
             session['admin_logged_in'] = True
             return redirect(url_for('admin_dashboard'))
         flash('Invalid admin credentials.', 'error')
