@@ -32,7 +32,7 @@ def seed_all():
            (subject, topic, topic_code, difficulty,
             question_text, option_a, option_b, option_c, option_d,
             correct_answer, explanation, correction_tip)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
+           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
         rows
     )
     conn.commit()

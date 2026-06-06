@@ -7,26 +7,30 @@ import threading
 import os
 import database as db
 
-print(f'[wsgi] DB_PATH = {db.DB_PATH}', flush=True)
-print(f'[wsgi] DB file exists = {os.path.exists(db.DB_PATH)}', flush=True)
-print(f'[wsgi] DB directory = {os.path.dirname(db.DB_PATH)}', flush=True)
+print(f'[wsgi] DATABASE_URL set = {"YES" if os.environ.get("DATABASE_URL") else "NO — app will crash"}', flush=True)
 
 db.init_db()
+print('[wsgi] Database initialised.', flush=True)
 
-import sqlite3
 _conn = db.get_db()
-_user_count = _conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
+_c    = db._cur(_conn)
+_c.execute('SELECT COUNT(*) AS cnt FROM users')
+_user_count = _c.fetchone()['cnt']
 _conn.close()
 print(f'[wsgi] Users in database = {_user_count}', flush=True)
+
 
 def _seed_if_needed():
     if not db.questions_exist():
         try:
             from seed_all import seed_all
             seed_all()
-            print('[wsgi] Database seeded.')
+            print('[wsgi] Database seeded.', flush=True)
         except Exception as e:
-            print(f'[wsgi] Seeding error: {e}')
+            print(f'[wsgi] Seeding error: {e}', flush=True)
+    else:
+        print('[wsgi] Questions already present — skipping seed.', flush=True)
+
 
 threading.Thread(target=_seed_if_needed, daemon=True).start()
 
