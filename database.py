@@ -367,6 +367,32 @@ def update_user_subscription(user_id, plan, expires=None):
     conn.close()
 
 
+def update_user_details(user_id, first_name, last_name, email, username):
+    """Update personal details. Returns (True, '') or (False, error_message)."""
+    conn = get_db()
+    try:
+        conn.execute(
+            '''UPDATE users
+               SET first_name=?, last_name=?, email=?, username=?
+               WHERE user_id=?''',
+            (first_name, last_name, email, username, user_id)
+        )
+        conn.commit()
+        return True, ''
+    except sqlite3.IntegrityError:
+        return False, 'That username or email is already in use by another account.'
+    finally:
+        conn.close()
+
+
+def update_user_password(user_id, new_password):
+    conn = get_db()
+    password_hash = generate_password_hash(new_password, method='pbkdf2:sha256')
+    conn.execute('UPDATE users SET password_hash=? WHERE user_id=?', (password_hash, user_id))
+    conn.commit()
+    conn.close()
+
+
 def get_users_for_reminder(days_inactive=7):
     """Return users with email who haven't been active for N days."""
     conn = get_db()

@@ -326,6 +326,49 @@ def profile():
                            difficulty_names=DIFFICULTY_NAMES)
 
 
+@app.route('/account', methods=['GET', 'POST'])
+@login_required
+def account():
+    user = db.get_user(session['user_id'])
+    if request.method == 'POST':
+        form = request.form.get('form')
+
+        if form == 'details':
+            first_name = request.form.get('first_name', '').strip()
+            last_name  = request.form.get('last_name', '').strip()
+            email      = request.form.get('email', '').strip().lower()
+            username   = request.form.get('username', '').strip()
+            if not first_name or not last_name or not username:
+                flash('Name and username are required.', 'error')
+            elif not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+                flash('Please enter a valid email address.', 'error')
+            else:
+                ok, msg = db.update_user_details(session['user_id'], first_name, last_name, email, username)
+                if ok:
+                    session['username'] = username  # keep session in sync
+                    flash('Your details have been updated.', 'success')
+                else:
+                    flash(msg, 'error')
+
+        elif form == 'password':
+            current  = request.form.get('current_password', '')
+            new_pw   = request.form.get('new_password', '')
+            confirm  = request.form.get('confirm_password', '')
+            verified = db.authenticate_user(user['username'], current)
+            if not verified:
+                flash('Current password is incorrect.', 'error')
+            elif len(new_pw) < 6:
+                flash('New password must be at least 6 characters.', 'error')
+            elif new_pw != confirm:
+                flash('New passwords do not match.', 'error')
+            else:
+                db.update_user_password(session['user_id'], new_pw)
+                flash('Password updated successfully.', 'success')
+
+        return redirect(url_for('account'))
+    return render_template('account.html', user=user)
+
+
 # ── Admin routes ──────────────────────────────────────────
 ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
 ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'changeme123')
