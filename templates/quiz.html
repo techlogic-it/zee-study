@@ -148,14 +148,16 @@ async function submitQuiz() {
     try {
       data = await resp.json();
     } catch(jsonErr) {
-      // Server returned non-JSON (e.g. an error page) — show status
-      throw new Error(`Server returned status ${resp.status}`);
+      throw new Error(`Server returned status ${resp.status} (not JSON)`);
     }
 
+    if (data.error) {
+      throw new Error(data.error);
+    }
     if (data.attempt_id) {
       window.location.href = `/results/${data.attempt_id}`;
     } else {
-      throw new Error(data.error || 'Unexpected response from server.');
+      throw new Error('Unexpected response from server.');
     }
   } catch(e) {
     console.error('Quiz submit error:', e);

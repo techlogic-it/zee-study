@@ -230,59 +230,68 @@ def quiz(subject, topic_code, level):
 @app.route('/submit_quiz', methods=['POST'])
 @login_required
 def submit_quiz():
-    data = request.get_json()
-    subject    = data.get('subject')
-    level      = int(data.get('level', 1))
-    answers    = data.get('answers', {})   # {str(question_id): 'A'/'B'/'C'/'D'}
-    topic_code = data.get('topic_code', None)
+    import traceback
+    try:
+        data = request.get_json(force=True, silent=True)
+        if not data:
+            return jsonify({'error': 'No data received'}), 400
 
-    if subject not in SUBJECTS or level not in DIFFICULTY_NAMES:
-        return jsonify({'error': 'Invalid request'}), 400
+        subject    = data.get('subject')
+        level      = int(data.get('level', 1))
+        answers    = data.get('answers', {})
+        topic_code = data.get('topic_code', None)
 
-    question_ids = [int(qid) for qid in answers]
-    questions    = db.get_questions_by_ids(question_ids)
+        if subject not in SUBJECTS or level not in DIFFICULTY_NAMES:
+            return jsonify({'error': 'Invalid subject or level'}), 400
 
-    score = 0
-    wrong_answers = []
+        question_ids = [int(qid) for qid in answers]
+        questions    = db.get_questions_by_ids(question_ids)
 
-    for q in questions:
-        qid_str     = str(q['question_id'])
-        user_answer = (answers.get(qid_str) or '').upper()
-        correct     = q['correct_answer'].upper()
-        is_correct  = (user_answer == correct)
+        score = 0
+        wrong_answers = []
 
-        if is_correct:
-            score += 1
-        else:
-            wrong_answers.append({
-                'question_text':      q['question_text'],
-                'user_answer':        user_answer,
-                'user_answer_text':   _option_text(q, user_answer),
-                'correct_answer':     correct,
-                'correct_answer_text': _option_text(q, correct),
-                'explanation':        q['explanation'],
-                'correction_tip':     q['correction_tip'],
-            })
+        for q in questions:
+            qid_str     = str(q['question_id'])
+            user_answer = (answers.get(qid_str) or '').upper()
+            correct     = q['correct_answer'].upper()
+            is_correct  = (user_answer == correct)
 
-    total      = len(questions)
-    percentage = round((score / total) * 100) if total else 0
+            if is_correct:
+                score += 1
+            else:
+                wrong_answers.append({
+                    'question_text':      q['question_text'],
+                    'user_answer':        user_answer,
+                    'user_answer_text':   _option_text(q, user_answer),
+                    'correct_answer':     correct,
+                    'correct_answer_text': _option_text(q, correct),
+                    'explanation':        q['explanation'],
+                    'correction_tip':     q['correction_tip'],
+                })
 
-    # XP calculation
-    xp = 20
-    if percentage >= 70:
-        xp += 30
-    if percentage == 100:
-        xp += 50
+        total      = len(questions)
+        percentage = round((score / total) * 100) if total else 0
 
-    # Streak
-    streak_bonus, new_streak = db.update_streak(session['user_id'])
-    if streak_bonus:
-        xp += 100
+        # XP calculation
+        xp = 20
+        if percentage >= 70:
+            xp += 30
+        if percentage == 100:
+            xp += 50
 
-    db.add_xp(session['user_id'], xp)
-    attempt_id = db.save_attempt(
-        session['user_id'], subject, level, score, total, xp, answers, questions, topic_code
-    )
+        # Streak
+        streak_bonus, new_streak = db.update_streak(session['user_id'])
+        if streak_bonus:
+            xp += 100
+
+        db.add_xp(session['user_id'], xp)
+        attempt_id = db.save_attempt(
+            session['user_id'], subject, level, score, total, xp, answers, questions, topic_code
+        )
+
+    except Exception as e:
+        print(f'[submit_quiz] ERROR: {traceback.format_exc()}', flush=True)
+        return jsonify({'error': str(e)}), 500
 
     return jsonify({
         'attempt_id':   attempt_id,
