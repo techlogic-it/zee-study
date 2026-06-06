@@ -33,6 +33,8 @@ def init_db():
             highest_streak  INTEGER DEFAULT 0,
             last_active_date TEXT,
             total_quizzes   INTEGER DEFAULT 0,
+            subscription_plan    TEXT    DEFAULT 'free',
+            subscription_expires TEXT,
             created_at    TEXT    DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -88,6 +90,16 @@ def init_db():
             conn.commit()
         except Exception:
             pass  # Column already exists — safe to ignore
+
+    for sql in [
+        "ALTER TABLE users ADD COLUMN subscription_plan TEXT DEFAULT 'free'",
+        "ALTER TABLE users ADD COLUMN subscription_expires TEXT",
+    ]:
+        try:
+            c.execute(sql)
+            conn.commit()
+        except Exception:
+            pass
 
     conn.close()
 
@@ -294,3 +306,45 @@ def questions_exist():
     count = conn.execute('SELECT COUNT(*) FROM questions').fetchone()[0]
     conn.close()
     return count > 0
+
+
+def get_all_users():
+    conn = get_db()
+    c = conn.cursor()
+    c.execute('''
+        SELECT u.user_id, u.username, u.xp, u.current_streak, u.highest_streak,
+               u.total_quizzes, u.subscription_plan, u.subscription_expires,
+               u.created_at, u.last_active_date,
+               COUNT(qa.attempt_id) as quiz_count
+        FROM users u
+        LEFT JOIN quiz_attempts qa ON u.user_id = qa.user_id
+        GROUP BY u.user_id
+        ORDER BY u.created_at DESC
+    ''')
+    rows = c.fetchall()
+    conn.close()
+    return rows
+
+def get_admin_stats():
+    conn = get_db()
+    c = conn.cursor()
+    stats = {}
+    c.execute('SELECT COUNT(*) FROM users')
+    stats['total_users'] = c.fetchone()[0]
+    c.execute("SELECT COUNT(*) FROM users WHERE subscription_plan = 'premium'")
+    stats['premium_users'] = c.fetchone()[0]
+    c.execute('SELECT COUNT(*) FROM quiz_attempts')
+    stats['total_quizzes'] = c.fetchone()[0]
+    c.execute('SELECT COUNT(DISTINCT user_id) FROM quiz_attempts WHERE DATE(completed_at) = DATE("now")')
+    stats['active_today'] = c.fetchone()[0]
+    conn.close()
+    return stats
+
+def update_user_subscription(user_id, plan, expires=None):
+    conn = get_db()
+    conn.execute(
+        'UPDATE users SET subscription_plan=?, subscription_expires=? WHERE user_id=?',
+        (plan, expires, user_id)
+    )
+    conn.commit()
+    conn.close()

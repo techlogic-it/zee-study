@@ -426,3 +426,8 @@ tr:hover td { background: var(--light); }
   font-size: .8rem;
   color: #546e7a;
 }
+
+/* Admin table responsive */
+.admin-table-wrap {
+  overflow-x: auto;
+}

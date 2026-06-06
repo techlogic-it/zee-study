@@ -1,5 +1,7 @@
 import json
+import os
 import random
+from functools import wraps
 from flask import (Flask, render_template, request, redirect,
                    url_for, session, flash, jsonify)
 import database as db
@@ -52,11 +54,19 @@ def get_topic_name(subject, topic_code):
 
 
 def login_required(f):
-    from functools import wraps
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
             return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not session.get('admin_logged_in'):
+            return redirect(url_for('admin_login'))
         return f(*args, **kwargs)
     return decorated
 
@@ -294,6 +304,43 @@ def profile():
     history = db.get_recent_attempts(session['user_id'], limit=20)
     return render_template('profile.html', user=user, history=history,
                            difficulty_names=DIFFICULTY_NAMES)
+
+
+# ── Admin routes ──────────────────────────────────────────
+ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'changeme123')
+
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        username = request.form.get('username', '')
+        password = request.form.get('password', '')
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_dashboard'))
+        flash('Invalid admin credentials.', 'error')
+    return render_template('admin_login.html')
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('admin_login'))
+
+@app.route('/admin')
+@admin_required
+def admin_dashboard():
+    users = db.get_all_users()
+    stats = db.get_admin_stats()
+    return render_template('admin_dashboard.html', users=users, stats=stats)
+
+@app.route('/admin/user/<int:user_id>/subscription', methods=['POST'])
+@admin_required
+def admin_update_subscription(user_id):
+    plan    = request.form.get('plan', 'free')
+    expires = request.form.get('expires') or None
+    db.update_user_subscription(user_id, plan, expires)
+    flash(f'Subscription updated.', 'success')
+    return redirect(url_for('admin_dashboard'))
 
 
 if __name__ == '__main__':

@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Admin – ZEE STUDY{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1100px">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <h1 class="page-heading" style="margin:0">🔧 Admin Dashboard</h1>
+    <a href="{{ url_for('admin_logout') }}" class="btn btn-outline btn-sm">Log out</a>
+  </div>
+
+  <!-- Stats row -->
+  <div class="stats-row" style="margin-bottom:2rem">
+    <div class="stat-tile">
+      <div class="stat-val">{{ stats.total_users }}</div>
+      <div class="stat-lbl">👥 Total Users</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-val" style="color:#f59e0b">{{ stats.premium_users }}</div>
+      <div class="stat-lbl">⭐ Premium Users</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-val">{{ stats.total_quizzes }}</div>
+      <div class="stat-lbl">📝 Total Quizzes</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-val" style="color:#2e7d32">{{ stats.active_today }}</div>
+      <div class="stat-lbl">🟢 Active Today</div>
+    </div>
+  </div>
+
+  <!-- Users table -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="padding:1.2rem 1.5rem;border-bottom:1px solid #e8f5e9">
+      <div class="card-title" style="margin:0">Registered Users</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+        <thead>
+          <tr style="background:#f1f8f1;text-align:left">
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Username</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Plan</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Expires</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">XP</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">🔥 Streak</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Quizzes</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Last Active</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Joined</th>
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for u in users %}
+          <tr style="border-top:1px solid #f0f0f0">
+            <td style="padding:.75rem 1rem;font-weight:600;color:#1b5e20">{{ u.username }}</td>
+            <td style="padding:.75rem 1rem">
+              {% if u.subscription_plan == 'premium' %}
+                <span style="background:#fef3c7;color:#92400e;padding:.2rem .6rem;border-radius:20px;font-size:.8rem;font-weight:600">⭐ Premium</span>
+              {% else %}
+                <span style="background:#f3f4f6;color:#6b7280;padding:.2rem .6rem;border-radius:20px;font-size:.8rem">Free</span>
+              {% endif %}
+            </td>
+            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.subscription_expires or '—' }}</td>
+            <td style="padding:.75rem 1rem">{{ u.xp }}</td>
+            <td style="padding:.75rem 1rem">{{ u.current_streak }}</td>
+            <td style="padding:.75rem 1rem">{{ u.total_quizzes }}</td>
+            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.last_active_date or '—' }}</td>
+            <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+            <td style="padding:.75rem 1rem">
+              <form method="POST" action="{{ url_for('admin_update_subscription', user_id=u.user_id) }}"
+                    style="display:flex;gap:.4rem;align-items:center">
+                <select name="plan" style="padding:.3rem .5rem;border:1px solid #ddd;border-radius:6px;font-size:.8rem">
+                  <option value="free" {% if u.subscription_plan == 'free' %}selected{% endif %}>Free</option>
+                  <option value="premium" {% if u.subscription_plan == 'premium' %}selected{% endif %}>Premium</option>
+                </select>
+                <input type="date" name="expires" value="{{ u.subscription_expires or '' }}"
+                       style="padding:.3rem .5rem;border:1px solid #ddd;border-radius:6px;font-size:.8rem">
+                <button type="submit" class="btn btn-green btn-sm" style="padding:.3rem .8rem;font-size:.8rem">Save</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="9" style="padding:2rem;text-align:center;color:#546e7a">No users registered yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

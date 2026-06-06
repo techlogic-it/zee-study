@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Admin Login – ZEE STUDY{% endblock %}
+
+{% block content %}
+<div class="container-sm">
+  <div class="card" style="margin-top:2rem">
+    <div class="auth-logo">
+      <img src="{{ url_for('static', filename='logo.png') }}" alt="ZEE STUDY" style="width:160px;height:auto;margin-bottom:.5rem;">
+      <p style="color:#b71c1c;font-weight:600">Admin Access Only</p>
+    </div>
+    <form method="POST">
+      <div class="form-group">
+        <label for="username">Admin Username</label>
+        <input type="text" id="username" name="username" required autofocus>
+      </div>
+      <div class="form-group">
+        <label for="password">Admin Password</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button type="submit" class="btn btn-green btn-block btn-lg">Login</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
