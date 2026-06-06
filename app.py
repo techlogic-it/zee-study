@@ -128,11 +128,14 @@ def login():
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
         user = db.authenticate_user(username, password)
-        if user:
+        if user == 'disabled':
+            flash('This account has been disabled. Please contact support.', 'error')
+        elif user:
             session['user_id'] = user['user_id']
             session['username'] = user['username']
             return redirect(url_for('dashboard'))
-        flash('Incorrect username or password.', 'error')
+        else:
+            flash('Incorrect username or password.', 'error')
     return render_template('login.html')
 
 
@@ -417,6 +420,41 @@ def admin_update_subscription(user_id):
     db.update_user_subscription(user_id, plan, expires)
     flash(f'Subscription updated.', 'success')
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/user/<int:user_id>/edit', methods=['POST'])
+@admin_required
+def admin_edit_user(user_id):
+    first_name = request.form.get('first_name', '').strip()
+    last_name  = request.form.get('last_name', '').strip()
+    email      = request.form.get('email', '').strip().lower()
+    username   = request.form.get('username', '').strip()
+    if not first_name or not last_name or not username or not email:
+        flash('All fields are required.', 'error')
+    else:
+        ok, msg = db.admin_update_user(user_id, first_name, last_name, email, username)
+        if ok:
+            flash('User updated successfully.', 'success')
+        else:
+            flash(msg, 'error')
+    return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/admin/user/<int:user_id>/disable', methods=['POST'])
+@admin_required
+def admin_disable_user(user_id):
+    action = request.form.get('action', 'disable')
+    db.set_user_disabled(user_id, action == 'disable')
+    flash(f'Account {"disabled" if action == "disable" else "re-enabled"}.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/admin/user/<int:user_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_user(user_id):
+    db.delete_user(user_id)
+    flash('User account deleted.', 'success')
+    return redirect(url_for('admin_dashboard'))
+
 
 @app.route('/admin/send-reminders', methods=['POST'])
 @admin_required

@@ -108,6 +108,7 @@ def init_db():
         'ALTER TABLE users ADD COLUMN email TEXT',
         'ALTER TABLE users ADD COLUMN first_name TEXT',
         'ALTER TABLE users ADD COLUMN last_name TEXT',
+        'ALTER TABLE users ADD COLUMN disabled INTEGER DEFAULT 0',
     ]:
         try:
             c.execute(sql)
@@ -154,6 +155,8 @@ def authenticate_user(username, password):
     ).fetchone()
     conn.close()
     if user and check_password_hash(user['password_hash'], password):
+        if user['disabled']:
+            return 'disabled'
         return dict(user)
     return None
 
@@ -342,7 +345,7 @@ def get_all_users():
         SELECT u.user_id, u.username, u.first_name, u.last_name, u.email,
                u.xp, u.current_streak, u.highest_streak,
                u.total_quizzes, u.subscription_plan, u.subscription_expires,
-               u.created_at, u.last_active_date,
+               u.created_at, u.last_active_date, u.disabled,
                COUNT(qa.attempt_id) as quiz_count
         FROM users u
         LEFT JOIN quiz_attempts qa ON u.user_id = qa.user_id
@@ -402,6 +405,40 @@ def update_user_password(user_id, new_password):
     conn.execute('UPDATE users SET password_hash=? WHERE user_id=?', (password_hash, user_id))
     conn.commit()
     conn.close()
+
+
+def set_user_disabled(user_id, disabled):
+    conn = get_db()
+    conn.execute('UPDATE users SET disabled=? WHERE user_id=?', (1 if disabled else 0, user_id))
+    conn.commit()
+    conn.close()
+
+
+def delete_user(user_id):
+    conn = get_db()
+    conn.execute('DELETE FROM user_answers WHERE attempt_id IN (SELECT attempt_id FROM quiz_attempts WHERE user_id=?)', (user_id,))
+    conn.execute('DELETE FROM quiz_attempts WHERE user_id=?', (user_id,))
+    conn.execute('DELETE FROM users WHERE user_id=?', (user_id,))
+    conn.commit()
+    conn.close()
+
+
+def admin_update_user(user_id, first_name, last_name, email, username):
+    conn = get_db()
+    try:
+        conn.execute(
+            'UPDATE users SET first_name=?, last_name=?, email=?, username=? WHERE user_id=?',
+            (first_name, last_name, email, username, user_id)
+        )
+        conn.commit()
+        return True, ''
+    except sqlite3.IntegrityError:
+        existing_u = conn.execute('SELECT user_id FROM users WHERE LOWER(username)=LOWER(?) AND user_id!=?', (username, user_id)).fetchone()
+        if existing_u:
+            return False, 'That username is already taken.'
+        return False, 'That email is already in use.'
+    finally:
+        conn.close()
 
 
 def get_users_for_reminder(days_inactive=7):
