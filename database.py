@@ -129,7 +129,18 @@ def create_user(username, password, email=None, first_name=None, last_name=None)
         conn.commit()
         return True, 'Account created.'
     except sqlite3.IntegrityError:
-        return False, 'That username is already taken.'
+        # Check which field caused the conflict
+        existing_username = conn.execute(
+            'SELECT 1 FROM users WHERE LOWER(username) = LOWER(?)', (username,)
+        ).fetchone()
+        if existing_username:
+            return False, 'That username is already taken. Please choose another.'
+        existing_email = conn.execute(
+            'SELECT 1 FROM users WHERE LOWER(email) = LOWER(?)', (email or '',)
+        ).fetchone()
+        if existing_email:
+            return False, 'An account with that email address already exists. Try logging in instead.'
+        return False, 'Account could not be created. Please try again.'
     finally:
         conn.close()
 
