@@ -10,9 +10,19 @@
     </div>
 
     <form method="POST">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="form-group" style="margin-bottom:0">
+          <label for="first_name">First Name</label>
+          <input type="text" id="first_name" name="first_name" placeholder="e.g. Zeeshan" required autofocus style="display:block;width:100%;box-sizing:border-box;">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label for="last_name">Last Name</label>
+          <input type="text" id="last_name" name="last_name" placeholder="e.g. Ahmed" required style="display:block;width:100%;box-sizing:border-box;">
+        </div>
+      </div>
       <div class="form-group">
         <label for="username">Username</label>
-        <input type="text" id="username" name="username" placeholder="Choose a username" required autofocus>
+        <input type="text" id="username" name="username" placeholder="Choose a username" required>
       </div>
       <div class="form-group">
         <label for="email">Email Address</label>

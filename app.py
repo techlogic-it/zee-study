@@ -88,11 +88,15 @@ def index():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email    = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        confirm  = request.form.get('confirm_password', '')
-        if not username or not password:
+        first_name = request.form.get('first_name', '').strip()
+        last_name  = request.form.get('last_name', '').strip()
+        username   = request.form.get('username', '').strip()
+        email      = request.form.get('email', '').strip().lower()
+        password   = request.form.get('password', '')
+        confirm    = request.form.get('confirm_password', '')
+        if not first_name or not last_name:
+            flash('Please enter your first and last name.', 'error')
+        elif not username or not password:
             flash('Username and password are required.', 'error')
         elif password != confirm:
             flash('Passwords do not match.', 'error')
@@ -101,11 +105,11 @@ def register():
         elif not email or not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
             flash('Please enter a valid email address.', 'error')
         else:
-            ok, msg = db.create_user(username, password, email)
+            ok, msg = db.create_user(username, password, email, first_name, last_name)
             if ok:
                 flash('Account created! Please log in.', 'success')
                 try:
-                    mailer.send_welcome(email, username)
+                    mailer.send_welcome(email, first_name)
                 except Exception:
                     pass
                 return redirect(url_for('login'))

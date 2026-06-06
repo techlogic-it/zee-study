@@ -54,6 +54,7 @@
       <table style="width:100%;border-collapse:collapse;font-size:.9rem">
         <thead>
           <tr style="background:#f1f8f1;text-align:left">
+            <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Name</th>
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Username</th>
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Email</th>
             <th style="padding:.75rem 1rem;color:#546e7a;font-weight:600">Plan</th>
@@ -69,6 +70,7 @@
         <tbody>
           {% for u in users %}
           <tr style="border-top:1px solid #f0f0f0">
+            <td style="padding:.75rem 1rem;color:#1b5e20">{{ (u.first_name or '') ~ ' ' ~ (u.last_name or '') | trim or '—' }}</td>
             <td style="padding:.75rem 1rem;font-weight:600;color:#1b5e20">{{ u.username }}</td>
             <td style="padding:.75rem 1rem;color:#546e7a;font-size:.85rem">{{ u.email or '—' }}</td>
             <td style="padding:.75rem 1rem">

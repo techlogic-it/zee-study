@@ -29,6 +29,8 @@ def init_db():
             username      TEXT    UNIQUE NOT NULL,
             password_hash TEXT    NOT NULL,
             email         TEXT    UNIQUE,
+            first_name    TEXT,
+            last_name     TEXT,
             xp            INTEGER DEFAULT 0,
             current_streak  INTEGER DEFAULT 0,
             highest_streak  INTEGER DEFAULT 0,
@@ -104,6 +106,8 @@ def init_db():
 
     for sql in [
         'ALTER TABLE users ADD COLUMN email TEXT',
+        'ALTER TABLE users ADD COLUMN first_name TEXT',
+        'ALTER TABLE users ADD COLUMN last_name TEXT',
     ]:
         try:
             c.execute(sql)
@@ -114,13 +118,13 @@ def init_db():
     conn.close()
 
 
-def create_user(username, password, email=None):
+def create_user(username, password, email=None, first_name=None, last_name=None):
     conn = get_db()
     try:
         password_hash = generate_password_hash(password, method='pbkdf2:sha256')
         conn.execute(
-            'INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)',
-            (username, password_hash, email)
+            'INSERT INTO users (username, password_hash, email, first_name, last_name) VALUES (?, ?, ?, ?, ?)',
+            (username, password_hash, email, first_name, last_name)
         )
         conn.commit()
         return True, 'Account created.'
@@ -322,7 +326,8 @@ def get_all_users():
     conn = get_db()
     c = conn.cursor()
     c.execute('''
-        SELECT u.user_id, u.username, u.email, u.xp, u.current_streak, u.highest_streak,
+        SELECT u.user_id, u.username, u.first_name, u.last_name, u.email,
+               u.xp, u.current_streak, u.highest_streak,
                u.total_quizzes, u.subscription_plan, u.subscription_expires,
                u.created_at, u.last_active_date,
                COUNT(qa.attempt_id) as quiz_count
