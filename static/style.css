@@ -28,7 +28,7 @@ body {
 
 /* ── Nav ── */
 nav {
-  background: var(--green);
+  background: #1a1a2e;
   padding: .9rem 1.5rem;
   display: flex;
   align-items: center;
