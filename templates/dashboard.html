@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="container">
-  <h1 class="page-heading">👋 Hello, {{ user.username }}!</h1>
+  <h1 class="page-heading">👋 Hello, {{ user.first_name or user.username }}!</h1>
   <p class="page-sub">Ready for today's revision? Keep that streak going.</p>
 
   <!-- Stats row -->
