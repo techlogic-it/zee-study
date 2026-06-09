@@ -418,6 +418,39 @@ def update_user_subscription(user_id, plan, expires=None):
     conn.close()
 
 
+def get_all_questions(subject=None, page=1, per_page=25):
+    conn = get_db()
+    c = _cur(conn)
+    offset = (page - 1) * per_page
+    if subject:
+        c.execute(
+            'SELECT * FROM questions WHERE subject=%s ORDER BY subject, topic_code, difficulty, question_id LIMIT %s OFFSET %s',
+            (subject, per_page, offset)
+        )
+        c2 = _cur(conn)
+        c2.execute('SELECT COUNT(*) AS cnt FROM questions WHERE subject=%s', (subject,))
+    else:
+        c.execute(
+            'SELECT * FROM questions ORDER BY subject, topic_code, difficulty, question_id LIMIT %s OFFSET %s',
+            (per_page, offset)
+        )
+        c2 = _cur(conn)
+        c2.execute('SELECT COUNT(*) AS cnt FROM questions')
+    rows = c.fetchall()
+    total = c2.fetchone()['cnt']
+    conn.close()
+    return [dict(r) for r in rows], total
+
+
+def delete_question(question_id):
+    conn = get_db()
+    c = _cur(conn)
+    c.execute('DELETE FROM user_answers WHERE question_id=%s', (question_id,))
+    c.execute('DELETE FROM questions WHERE question_id=%s', (question_id,))
+    conn.commit()
+    conn.close()
+
+
 def insert_questions_bulk(rows):
     required = ['subject', 'question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer']
     inserted = 0

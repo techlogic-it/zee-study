@@ -457,6 +457,30 @@ def admin_delete_user(user_id):
     return redirect(url_for('admin_dashboard'))
 
 
+@app.route('/admin/questions')
+@admin_required
+def admin_questions():
+    subject = request.args.get('subject', '')
+    page = int(request.args.get('page', 1))
+    questions, total = db.get_all_questions(subject or None, page=page, per_page=25)
+    total_pages = max(1, (total + 24) // 25)
+    return render_template('admin_questions.html',
+                           questions=questions, total=total,
+                           page=page, total_pages=total_pages,
+                           subject=subject, subjects=SUBJECTS,
+                           difficulty_names=DIFFICULTY_NAMES)
+
+
+@app.route('/admin/question/<int:question_id>/delete', methods=['POST'])
+@admin_required
+def admin_delete_question(question_id):
+    db.delete_question(question_id)
+    flash('Question deleted.', 'success')
+    subject = request.form.get('subject', '')
+    page = request.form.get('page', '1')
+    return redirect(url_for('admin_questions', subject=subject, page=page))
+
+
 @app.route('/admin/upload-questions', methods=['GET', 'POST'])
 @admin_required
 def admin_upload_questions():

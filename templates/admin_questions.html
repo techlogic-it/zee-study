@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Manage Questions – Admin{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1100px">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
+    <h1 class="page-heading" style="margin:0">❓ Manage Questions</h1>
+    <div style="display:flex;gap:.5rem">
+      <a href="{{ url_for('admin_upload_questions') }}" class="btn btn-green btn-sm">📂 Upload Questions</a>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline btn-sm">← Dashboard</a>
+    </div>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" style="margin-bottom:1rem">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Filter bar -->
+  <form method="GET" action="{{ url_for('admin_questions') }}"
+        style="display:flex;gap:.75rem;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap">
+    <select name="subject" style="padding:.5rem .75rem;border:1px solid #ddd;border-radius:6px;font-size:.9rem">
+      <option value="">All Subjects ({{ total }})</option>
+      {% for s in subjects %}
+      <option value="{{ s }}" {% if subject == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-green btn-sm">Filter</button>
+    {% if subject %}
+    <a href="{{ url_for('admin_questions') }}" style="font-size:.88rem;color:#546e7a">Clear filter</a>
+    {% endif %}
+    <span style="margin-left:auto;color:#546e7a;font-size:.88rem">
+      Showing {{ questions|length }} of {{ total }} question(s) — page {{ page }} of {{ total_pages }}
+    </span>
+  </form>
+
+  <!-- Questions table -->
+  <div class="card" style="padding:0;overflow:hidden">
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:.88rem">
+        <thead>
+          <tr style="background:#f1f8f1;text-align:left">
+            <th style="padding:.6rem 1rem;color:#546e7a;font-weight:600">ID</th>
+            <th style="padding:.6rem 1rem;color:#546e7a;font-weight:600">Subject</th>
+            <th style="padding:.6rem 1rem;color:#546e7a;font-weight:600">Topic</th>
+            <th style="padding:.6rem 1rem;color:#546e7a;font-weight:600">Diff</th>
+            <th style="padding:.6rem 1rem;color:#546e7a;font-weight:600;min-width:300px">Question</th>
+            <th style="padding:.6rem 1rem;color:#546e7a;font-weight:600;text-align:center">Answer</th>
+            <th style="padding:.6rem 1rem;color:#546e7a;font-weight:600;text-align:center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for q in questions %}
+          <tr style="border-top:1px solid #f0f0f0" id="q{{ q.question_id }}">
+            <td style="padding:.6rem 1rem;color:#9e9e9e;font-size:.8rem">{{ q.question_id }}</td>
+            <td style="padding:.6rem 1rem">
+              <span style="font-size:.78rem;font-weight:700;padding:.15rem .5rem;border-radius:20px;
+                {% if q.subject == 'Biology' %}background:#e8f5e9;color:#2e7d32
+                {% elif q.subject == 'Chemistry' %}background:#e3f2fd;color:#1565c0
+                {% else %}background:#f3e5f5;color:#6a1b9a{% endif %}">
+                {{ q.subject[:4] }}
+              </span>
+            </td>
+            <td style="padding:.6rem 1rem;color:#546e7a;white-space:nowrap">
+              {% if q.topic_code %}<strong>{{ q.topic_code }}</strong> {% endif %}
+              <span style="font-size:.8rem">{{ (q.topic or '')[:20] }}</span>
+            </td>
+            <td style="padding:.6rem 1rem;text-align:center">
+              <span style="font-size:.78rem;font-weight:700;padding:.15rem .5rem;border-radius:20px;
+                {% if q.difficulty == 1 %}background:#e8f5e9;color:#2e7d32
+                {% elif q.difficulty == 2 %}background:#e3f2fd;color:#1565c0
+                {% elif q.difficulty == 3 %}background:#fff8e1;color:#e65100
+                {% else %}background:#ffebee;color:#c62828{% endif %}">
+                {{ difficulty_names[q.difficulty] }}
+              </span>
+            </td>
+            <td style="padding:.6rem 1rem;max-width:360px">
+              <div style="white-space:normal;line-height:1.4">{{ q.question_text }}</div>
+              <div style="font-size:.78rem;color:#9e9e9e;margin-top:.25rem">
+                A: {{ q.option_a }} &nbsp;·&nbsp; B: {{ q.option_b }} &nbsp;·&nbsp;
+                C: {{ q.option_c }} &nbsp;·&nbsp; D: {{ q.option_d }}
+              </div>
+            </td>
+            <td style="padding:.6rem 1rem;text-align:center">
+              <span style="font-weight:800;font-size:1rem;color:#2e7d32">{{ q.correct_answer }}</span>
+            </td>
+            <td style="padding:.6rem 1rem;text-align:center">
+              <form method="POST" action="{{ url_for('admin_delete_question', question_id=q.question_id) }}"
+                    onsubmit="return confirm('Delete this question permanently?')">
+                <input type="hidden" name="subject" value="{{ subject }}">
+                <input type="hidden" name="page" value="{{ page }}">
+                <button type="submit"
+                        style="padding:.3rem .7rem;font-size:.8rem;background:#fee2e2;color:#b91c1c;
+                               border:1px solid #fca5a5;border-radius:6px;cursor:pointer;font-weight:600">
+                  🗑️ Delete
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="padding:2rem;text-align:center;color:#546e7a">No questions found.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div style="display:flex;justify-content:center;gap:.5rem;margin-top:1.2rem;flex-wrap:wrap">
+    {% if page > 1 %}
+    <a href="{{ url_for('admin_questions', subject=subject, page=page-1) }}"
+       class="btn btn-outline btn-sm">← Prev</a>
+    {% endif %}
+    {% for p in range([1, page-2]|max, [total_pages+1, page+3]|min) %}
+    <a href="{{ url_for('admin_questions', subject=subject, page=p) }}"
+       class="btn btn-sm {% if p == page %}btn-green{% else %}btn-outline{% endif %}">{{ p }}</a>
+    {% endfor %}
+    {% if page < total_pages %}
+    <a href="{{ url_for('admin_questions', subject=subject, page=page+1) }}"
+       class="btn btn-outline btn-sm">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
