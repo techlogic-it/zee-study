@@ -410,6 +410,7 @@ def admin_logout():
 def admin_dashboard():
     users = db.get_all_users()
     stats = db.get_admin_stats()
+    stats['total_questions'] = db.get_question_count()
     return render_template('admin_dashboard.html', users=users, stats=stats)
 
 @app.route('/admin/user/<int:user_id>/subscription', methods=['POST'])
@@ -454,6 +455,71 @@ def admin_delete_user(user_id):
     db.delete_user(user_id)
     flash('User account deleted.', 'success')
     return redirect(url_for('admin_dashboard'))
+
+
+@app.route('/admin/upload-questions', methods=['GET', 'POST'])
+@admin_required
+def admin_upload_questions():
+    import io, csv, traceback
+    question_count = db.get_question_count()
+
+    if request.method == 'POST':
+        if request.form.get('action') == 'delete':
+            subject = request.form.get('subject') or None
+            deleted = db.delete_questions_by_subject(subject)
+            label = subject if subject else 'all subjects'
+            flash(f'Deleted {deleted} question(s) from {label}.', 'success')
+            return redirect(url_for('admin_upload_questions'))
+
+        file = request.files.get('file')
+        if not file or not file.filename:
+            flash('No file selected.', 'error')
+            return redirect(url_for('admin_upload_questions'))
+
+        filename = file.filename.lower()
+        rows = []
+        try:
+            if filename.endswith('.csv'):
+                content = file.read().decode('utf-8-sig')
+                reader = csv.DictReader(io.StringIO(content))
+                rows = list(reader)
+            elif filename.endswith('.xlsx'):
+                import openpyxl
+                wb = openpyxl.load_workbook(io.BytesIO(file.read()))
+                ws = wb.active
+                headers = [cell.value for cell in ws[1]]
+                for row in ws.iter_rows(min_row=2, values_only=True):
+                    if any(v is not None for v in row):
+                        rows.append(dict(zip(headers, row)))
+            else:
+                flash('Please upload a .csv or .xlsx file.', 'error')
+                return redirect(url_for('admin_upload_questions'))
+
+            inserted, skipped = db.insert_questions_bulk(rows)
+            flash(f'Done! {inserted} question(s) added, {skipped} row(s) skipped (missing required fields).', 'success')
+        except Exception as e:
+            print(f'[upload_questions] ERROR: {traceback.format_exc()}', flush=True)
+            flash(f'Error reading file: {e}', 'error')
+
+        return redirect(url_for('admin_upload_questions'))
+
+    return render_template('admin_upload_questions.html', question_count=question_count, subjects=SUBJECTS)
+
+
+@app.route('/admin/question-template')
+@admin_required
+def admin_question_template():
+    from flask import Response
+    lines = [
+        'subject,topic,topic_code,difficulty,question_text,option_a,option_b,option_c,option_d,correct_answer,explanation,correction_tip',
+        'Biology,Cell Biology,B1,1,What is the powerhouse of the cell?,Mitochondria,Nucleus,Ribosome,Cell membrane,A,The mitochondria produce ATP through cellular respiration.,Remember: MITO = energy maker',
+        'Chemistry,Atomic Structure & Periodic Table,C1,2,What is the atomic number of Carbon?,6,12,8,14,A,The atomic number equals the number of protons. Carbon has 6 protons.,Atomic number = protons (not mass number).',
+    ]
+    return Response(
+        '\n'.join(lines),
+        mimetype='text/csv',
+        headers={'Content-Disposition': 'attachment; filename=question_template.csv'}
+    )
 
 
 @app.route('/admin/send-reminders', methods=['POST'])

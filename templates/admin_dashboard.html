@@ -4,9 +4,12 @@
 {% block content %}
 <div class="container" style="max-width:1100px">
 
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem">
     <h1 class="page-heading" style="margin:0">🔧 Admin Dashboard</h1>
-    <a href="{{ url_for('admin_logout') }}" class="btn btn-outline btn-sm">Log out</a>
+    <div style="display:flex;gap:.5rem">
+      <a href="{{ url_for('admin_upload_questions') }}" class="btn btn-green btn-sm">📂 Upload Questions</a>
+      <a href="{{ url_for('admin_logout') }}" class="btn btn-outline btn-sm">Log out</a>
+    </div>
   </div>
 
   <!-- Stats row -->
@@ -26,6 +29,10 @@
     <div class="stat-tile">
       <div class="stat-val" style="color:#2e7d32">{{ stats.active_today }}</div>
       <div class="stat-lbl">🟢 Active Today</div>
+    </div>
+    <div class="stat-tile">
+      <div class="stat-val" style="color:#1565c0">{{ stats.total_questions }}</div>
+      <div class="stat-lbl">❓ Questions</div>
     </div>
   </div>
 

@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Upload Questions – Admin{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:860px">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+    <h1 class="page-heading" style="margin:0">📂 Upload Questions</h1>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline btn-sm">← Back to Dashboard</a>
+  </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" style="margin-bottom:1rem">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Current count -->
+  <div class="stats-row" style="margin-bottom:2rem">
+    <div class="stat-tile">
+      <div class="stat-val">{{ question_count }}</div>
+      <div class="stat-lbl">📝 Questions in Database</div>
+    </div>
+  </div>
+
+  <!-- Upload card -->
+  <div class="card">
+    <div class="card-title">⬆️ Upload Questions File</div>
+    <p style="color:#546e7a;font-size:.92rem;margin-bottom:1.2rem">
+      Upload a <strong>CSV</strong> or <strong>Excel (.xlsx)</strong> file. New questions are added to the existing database — existing questions are not affected.
+    </p>
+
+    <form method="POST" action="{{ url_for('admin_upload_questions') }}" enctype="multipart/form-data">
+      <div style="border:2px dashed #a5d6a7;border-radius:10px;padding:1.8rem;text-align:center;background:#f9fffe;margin-bottom:1.2rem">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">📁</div>
+        <input type="file" name="file" accept=".csv,.xlsx" required
+               style="display:block;margin:0 auto .8rem;font-size:.95rem">
+        <p style="color:#546e7a;font-size:.82rem;margin:0">Accepted: .csv, .xlsx</p>
+      </div>
+      <button type="submit" class="btn btn-green btn-block">Upload &amp; Add Questions</button>
+    </form>
+  </div>
+
+  <!-- Format guide -->
+  <div class="card">
+    <div class="card-title">📋 Required File Format</div>
+    <p style="color:#546e7a;font-size:.9rem;margin-bottom:1rem">
+      The first row must be column headers exactly as shown below. Download the template to get started.
+    </p>
+
+    <div style="overflow-x:auto;margin-bottom:1.2rem">
+      <table style="font-size:.85rem;width:100%">
+        <thead>
+          <tr style="background:#e8f5e9">
+            <th style="padding:.5rem .75rem;text-align:left">Column</th>
+            <th style="padding:.5rem .75rem;text-align:left">Required</th>
+            <th style="padding:.5rem .75rem;text-align:left">Values / Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">subject</td><td style="padding:.45rem .75rem;color:#2e7d32;font-weight:600">Yes</td><td style="padding:.45rem .75rem;color:#546e7a">Biology, Chemistry, or Physics</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">topic</td><td style="padding:.45rem .75rem;color:#888">No</td><td style="padding:.45rem .75rem;color:#546e7a">e.g. Cell Biology</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">topic_code</td><td style="padding:.45rem .75rem;color:#888">No</td><td style="padding:.45rem .75rem;color:#546e7a">e.g. B1, C3, P2</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">difficulty</td><td style="padding:.45rem .75rem;color:#888">No</td><td style="padding:.45rem .75rem;color:#546e7a">1 = Easy, 2 = Medium, 3 = Hard, 4 = Exam Challenge (defaults to 1)</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">question_text</td><td style="padding:.45rem .75rem;color:#2e7d32;font-weight:600">Yes</td><td style="padding:.45rem .75rem;color:#546e7a">The full question</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">option_a</td><td style="padding:.45rem .75rem;color:#2e7d32;font-weight:600">Yes</td><td style="padding:.45rem .75rem;color:#546e7a">Answer choice A</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">option_b</td><td style="padding:.45rem .75rem;color:#2e7d32;font-weight:600">Yes</td><td style="padding:.45rem .75rem;color:#546e7a">Answer choice B</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">option_c</td><td style="padding:.45rem .75rem;color:#2e7d32;font-weight:600">Yes</td><td style="padding:.45rem .75rem;color:#546e7a">Answer choice C</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">option_d</td><td style="padding:.45rem .75rem;color:#2e7d32;font-weight:600">Yes</td><td style="padding:.45rem .75rem;color:#546e7a">Answer choice D</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">correct_answer</td><td style="padding:.45rem .75rem;color:#2e7d32;font-weight:600">Yes</td><td style="padding:.45rem .75rem;color:#546e7a">A, B, C, or D</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">explanation</td><td style="padding:.45rem .75rem;color:#888">No</td><td style="padding:.45rem .75rem;color:#546e7a">Shown after an incorrect answer</td></tr>
+          <tr><td style="padding:.45rem .75rem;font-family:monospace">correction_tip</td><td style="padding:.45rem .75rem;color:#888">No</td><td style="padding:.45rem .75rem;color:#546e7a">Short memory tip for students</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <a href="{{ url_for('admin_question_template') }}" class="btn btn-outline">⬇️ Download Blank Template (.csv)</a>
+  </div>
+
+  <!-- Topic codes reference -->
+  <div class="card">
+    <div class="card-title">🗺️ Topic Code Reference</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.2rem;font-size:.88rem">
+      <div>
+        <div style="font-weight:700;color:#2e7d32;margin-bottom:.5rem">🌿 Biology</div>
+        <div style="color:#546e7a;line-height:1.9">
+          B1 – Cell Biology<br>B2 – Organisation<br>B3 – Infection &amp; Response<br>
+          B4 – Bioenergetics<br>B5 – Homeostasis &amp; Response<br>
+          B6 – Inheritance, Variation &amp; Evolution<br>B7 – Ecology
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:#1565c0;margin-bottom:.5rem">⚗️ Chemistry</div>
+        <div style="color:#546e7a;line-height:1.9">
+          C1 – Atomic Structure<br>C2 – Bonding &amp; Structure<br>C3 – Quantitative Chemistry<br>
+          C4 – Chemical Changes<br>C5 – Energy Changes<br>C6 – Rate &amp; Extent<br>
+          C7 – Organic Chemistry<br>C8 – Chemical Analysis<br>C9 – Atmosphere<br>C10 – Using Resources
+        </div>
+      </div>
+      <div>
+        <div style="font-weight:700;color:#6a1b9a;margin-bottom:.5rem">⚡ Physics</div>
+        <div style="color:#546e7a;line-height:1.9">
+          P1 – Energy<br>P2 – Electricity<br>P3 – Particle Model<br>P4 – Atomic Structure<br>
+          P5 – Forces<br>P6 – Waves<br>P7 – Magnetism<br>P8 – Space Physics
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Danger zone -->
+  <div class="card" style="border:1px solid #fca5a5">
+    <div class="card-title" style="color:#b91c1c">⚠️ Delete Questions</div>
+    <p style="color:#546e7a;font-size:.9rem;margin-bottom:1.2rem">
+      Remove questions from the database. Use this before re-uploading to replace questions rather than duplicate them.
+    </p>
+    <form method="POST" action="{{ url_for('admin_upload_questions') }}"
+          onsubmit="return confirm('Are you sure? This will permanently delete the selected questions.')">
+      <input type="hidden" name="action" value="delete">
+      <div style="display:flex;gap:.75rem;align-items:center;flex-wrap:wrap">
+        <select name="subject" style="padding:.5rem .75rem;border:1px solid #ddd;border-radius:6px;font-size:.9rem">
+          <option value="">All subjects</option>
+          {% for s in subjects %}
+          <option value="{{ s }}">{{ s }} only</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-danger btn-sm">Delete Questions</button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

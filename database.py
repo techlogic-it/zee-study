@@ -418,6 +418,63 @@ def update_user_subscription(user_id, plan, expires=None):
     conn.close()
 
 
+def insert_questions_bulk(rows):
+    required = ['subject', 'question_text', 'option_a', 'option_b', 'option_c', 'option_d', 'correct_answer']
+    inserted = 0
+    skipped = 0
+    conn = get_db()
+    c = _cur(conn)
+    for row in rows:
+        row = {k.strip().lower().replace(' ', '_'): (str(v).strip() if v is not None else '') for k, v in row.items()}
+        if not all(row.get(f) for f in required):
+            skipped += 1
+            continue
+        try:
+            difficulty = int(float(row.get('difficulty') or 1))
+            if difficulty not in (1, 2, 3, 4):
+                difficulty = 1
+            c.execute(
+                '''INSERT INTO questions
+                   (subject, topic, topic_code, difficulty, question_text,
+                    option_a, option_b, option_c, option_d, correct_answer,
+                    explanation, correction_tip)
+                   VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
+                (row.get('subject'), row.get('topic') or None, row.get('topic_code') or None,
+                 difficulty, row.get('question_text'),
+                 row.get('option_a'), row.get('option_b'), row.get('option_c'), row.get('option_d'),
+                 (row.get('correct_answer') or '').upper(),
+                 row.get('explanation') or '', row.get('correction_tip') or ''))
+            inserted += 1
+        except Exception as e:
+            print(f'[insert_questions_bulk] row error: {e}', flush=True)
+            skipped += 1
+    conn.commit()
+    conn.close()
+    return inserted, skipped
+
+
+def get_question_count():
+    conn = get_db()
+    c = _cur(conn)
+    c.execute('SELECT COUNT(*) AS cnt FROM questions')
+    cnt = c.fetchone()['cnt']
+    conn.close()
+    return cnt
+
+
+def delete_questions_by_subject(subject=None):
+    conn = get_db()
+    c = _cur(conn)
+    if subject:
+        c.execute('DELETE FROM questions WHERE subject=%s', (subject,))
+    else:
+        c.execute('DELETE FROM questions')
+    deleted = c.rowcount
+    conn.commit()
+    conn.close()
+    return deleted
+
+
 def get_users_for_reminder(days_inactive=7):
     conn = get_db()
     c = _cur(conn)
